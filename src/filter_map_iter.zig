@@ -10,13 +10,29 @@ const sliceIter = itertools.sliceIter;
 ///
 /// See `map` for more info.
 pub fn FilterMapIter(comptime BaseIter: type, comptime func: anytype) type {
+    const Fn = @typeInfo(@TypeOf(func)).Fn;
     return struct {
         const Self = @This();
 
         base_iter: BaseIter,
 
-        pub const Dest = @typeInfo(@typeInfo(@TypeOf(func)).Fn.return_type.?).Optional.child;
-        pub const Next = if (IterError(BaseIter)) |ES| ES!?Dest else ?Dest;
+        pub const Dest: type = switch (@typeInfo(Fn.return_type.?)) {
+            .ErrorUnion => |EU| switch (@typeInfo(EU.payload)) {
+                .Optional => |Optional| Optional.child,
+                else => @compileError("FilterMapIter: function return type must be `?T` or `!?T`, found: " ++ @typeName(EU.payload)),
+            },
+            .Optional => |Optional| Optional.child,
+            else => @compileError("FilterMapIter: function return type must be `?T` or `!?T`, found: " ++ @typeName(Fn.return_type.?)),
+        };
+        pub const DestES: ?type = switch (@typeInfo(Fn.return_type.?)) {
+            .ErrorUnion => |EU| EU.error_set,
+            .Optional => null,
+            else => @compileError("FilterMapIter: function return type must be `?T` or `!?T`, found: " ++ @typeName(Fn.return_type.?)),
+        };
+        pub const Next: type = if (IterError(BaseIter)) |ES|
+            (if (DestES) |DES| (ES || DES)!?Dest else ES!?Dest)
+        else
+            (if (DestES) |DES| DES!?Dest else ?Dest);
 
         pub fn next(self: *Self) Next {
             const has_error = comptime IterError(BaseIter) != null;
@@ -26,7 +42,9 @@ pub fn FilterMapIter(comptime BaseIter: type, comptime func: anytype) type {
                 self.base_iter.next();
 
             const item = maybe_item orelse return null;
-            return if (func(item)) |transformed|
+            const maybe_transformed = if (DestES != null) try func(item) else func(item);
+
+            return if (maybe_transformed) |transformed|
                 transformed
             else
                 @call(.always_tail, Self.next, .{self}); // no need to `try` because the error union, if any, stays the same
@@ -39,14 +57,30 @@ pub fn FilterMapContextIter(
     comptime Context: type,
     comptime func: anytype,
 ) type {
+    const Fn = @typeInfo(@TypeOf(func)).Fn;
     return struct {
         const Self = @This();
 
         base_iter: BaseIter,
         context: Context,
 
-        pub const Dest = @typeInfo(@typeInfo(@TypeOf(func)).Fn.return_type.?).Optional.child;
-        pub const Next = if (IterError(BaseIter)) |ES| ES!?Dest else ?Dest;
+        pub const Dest: type = switch (@typeInfo(Fn.return_type.?)) {
+            .ErrorUnion => |EU| switch (@typeInfo(EU.payload)) {
+                .Optional => |Optional| Optional.child,
+                else => @compileError("FilterMapIter: function return type must be `?T` or `!?T`, found: " ++ @typeName(EU.payload)),
+            },
+            .Optional => |Optional| Optional.child,
+            else => @compileError("FilterMapIter: function return type must be `?T` or `!?T`, found: " ++ @typeName(Fn.return_type.?)),
+        };
+        pub const DestES: ?type = switch (@typeInfo(Fn.return_type.?)) {
+            .ErrorUnion => |EU| EU.error_set,
+            .Optional => null,
+            else => @compileError("FilterMapIter: function return type must be `?T` or `!?T`, found: " ++ @typeName(Fn.return_type.?)),
+        };
+        pub const Next: type = if (IterError(BaseIter)) |ES|
+            (if (DestES) |DES| (ES || DES)!?Dest else ES!?Dest)
+        else
+            (if (DestES) |DES| DES!?Dest else ?Dest);
 
         pub fn next(self: *Self) Next {
             const has_error = comptime IterError(BaseIter) != null;
@@ -56,7 +90,13 @@ pub fn FilterMapContextIter(
                 self.base_iter.next();
 
             const item = maybe_item orelse return null;
-            return if (func(self.context, item)) |transformed|
+
+            const maybe_transformed = if (DestES != null)
+                try func(self.context, item)
+            else
+                func(self.context, item);
+
+            return if (maybe_transformed) |transformed|
                 transformed
             else
                 @call(.always_tail, Self.next, .{self}); // no need to `try` because the error union, if any, stays the same
@@ -79,7 +119,14 @@ pub fn filterMap(
 pub fn validateFilterMapFn(
     comptime Source: type,
     comptime func: anytype,
-) fn (Source) ?@typeInfo(@typeInfo(@TypeOf(func)).Fn.return_type.?).Optional.child {
+) fn (Source) switch (@typeInfo(@typeInfo(@TypeOf(func)).Fn.return_type.?)) {
+    .Optional => |Optional| ?Optional.child,
+    .ErrorUnion => |EU| switch (@typeInfo(EU.payload)) {
+        .Optional => |Optional| EU.error_set!?Optional.child,
+        else => @compileError("filterMap: function return type must be `?T` or `!?T`, found: " ++ @typeName(EU.payload)),
+    },
+    else => @compileError("filterMap: function return type must be `?T` or `!?T`, found: " ++ @typeName(@typeInfo(@TypeOf(func)).Fn.return_type.?)),
+} {
     return func;
 }
 
@@ -183,7 +230,7 @@ test "FilterMapContextIter closure" {
     try testing.expectEqual(@as(?u64, null), iter.next());
 }
 
-test "MapIter error" {
+test "FilterMapIter error" {
     var test_iter = TestErrorIter.init(3);
 
     const func = struct {
@@ -200,6 +247,23 @@ test "MapIter error" {
     try testing.expectEqual(u64, Item(@TypeOf(iter)));
     try testing.expectEqual(@as(?u64, 0), try iter.next());
     try testing.expectEqual(@as(?u64, 1), try iter.next());
+    try testing.expectError(error.TestErrorIterError, iter.next());
+}
+
+test "FilterMapIter error union" {
+    var test_iter = TestErrorIter.init(3);
+
+    const doubleEven = struct {
+        pub fn doubleEven(x: usize) error{Overflow}!?u64 {
+            return if (x % 2 == 0) try std.math.mul(u64, 2, x) else null;
+        }
+    }.doubleEven;
+
+    var iter = filterMap(test_iter, doubleEven);
+
+    try testing.expectEqual(u64, Item(@TypeOf(iter)));
+    try testing.expectEqual(@as(?u64, 0), try iter.next());
+    try testing.expectEqual(@as(?u64, 4), try iter.next());
     try testing.expectError(error.TestErrorIterError, iter.next());
 }
 
