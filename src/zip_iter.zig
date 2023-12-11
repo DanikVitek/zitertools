@@ -94,38 +94,34 @@ pub fn ZipIterErrorSet(comptime Iters: type) ?type {
         @compileError("expected tuple or struct, found '" ++ @typeName(Iters) ++ "'");
     }
 
-    return comptime iterMethods(sliceIter(StructField, iters_type_info.Struct.fields)).filterMap(struct {
-        fn isErrorUnion(field: StructField) ?type {
-            return switch (@typeInfo(field.type)) {
-                .ErrorUnion => |ErrorUnion| ErrorUnion.error_set,
-                else => null,
-            };
+    var ES: ?type = null;
+    for (iters_type_info.Struct.fields) |field| {
+        if (field.is_comptime) {
+            continue;
         }
-    }.isErrorUnion).reduce(struct {
-        fn ErrorUnion(comptime Error1: type, comptime Error2: type) type {
-            return Error1 || Error2;
-        }
-    }.ErrorUnion);
+        ES = ES orelse error{} || (IterError(field.type) orelse continue);
+    }
+    return ES;
 }
 
-/// ‘Zips up’ two iterators into a single iterator of pairs.
+/// ‘Zips up’ several iterators into a single iterator of tuples/structs.
 ///
-/// `zip()` returns a new iterator that will iterate over two other iterators,
-/// returning a tuple where the first element comes from the first iterator,
-/// and the second element comes from the second iterator.
+/// `zip()` returns a new iterator that will iterate over several other iterators,
+/// returning a tuple/struct of items where each field corresponts
+/// to the field in the tuple/struct of iteratos.
 ///
-/// In other words, it zips two iterators together, into a single one.
+/// In other words, it zips several iterators together, into a single one.
 ///
 /// If either iterator returns null, next from the zipped iterator will return
 /// null. If the zipped iterator has no more elements to return then each
 /// further attempt to advance it will first try to advance the first iterator
 /// at most one time and if it still yielded an item try to advance the second
-/// iterator at most one time.
+/// iterator at most one time and so on.
 pub fn zip(iters: anytype) ZipIter(@TypeOf(iters)) {
     return .{ .iters = iters };
 }
 
-test "zip" {
+test "zip tuple" {
     var iter1 = sliceIter(u32, &.{ 1, 2, 3 });
     var iter2 = range(u64, 5, 8);
     var iter = zip(.{ iter1, iter2 });
@@ -141,3 +137,54 @@ test "zip" {
     try testing.expectEqual(@as(u64, 7), v3.@"1");
     try testing.expectEqual(@as(?Item(@TypeOf(iter)), null), iter.next());
 }
+
+test "zip struct" {
+    var iter1 = sliceIter(u32, &.{ 1, 2, 3 });
+    var iter2 = range(u64, 5, 8);
+    var iter = zip(.{ .first = iter1, .second = iter2 });
+    try testing.expectEqual(@TypeOf(iter).Item, Item(@TypeOf(iter)));
+    const v1 = iter.next().?;
+    try testing.expectEqual(@as(u32, 1), v1.first);
+    try testing.expectEqual(@as(u64, 5), v1.second);
+    const v2 = iter.next().?;
+    try testing.expectEqual(@as(u32, 2), v2.first);
+    try testing.expectEqual(@as(u64, 6), v2.second);
+    const v3 = iter.next().?;
+    try testing.expectEqual(@as(u32, 3), v3.first);
+    try testing.expectEqual(@as(u64, 7), v3.second);
+    try testing.expectEqual(@as(?Item(@TypeOf(iter)), null), iter.next());
+}
+
+test "zip error first" {
+    var iter1 = TestErrorIter.init(3);
+    var iter2 = range(u64, 5, 8);
+    var iter = zip(.{ iter1, iter2 });
+    try testing.expectEqual(@TypeOf(iter).Item, Item(@TypeOf(iter)));
+    const v1 = (try iter.next()).?;
+    try testing.expectEqual(@as(usize, 0), v1.@"0");
+    try testing.expectEqual(@as(u64, 5), v1.@"1");
+    const v2 = (try iter.next()).?;
+    try testing.expectEqual(@as(usize, 1), v2.@"0");
+    try testing.expectEqual(@as(u64, 6), v2.@"1");
+    const v3 = (try iter.next()).?;
+    try testing.expectEqual(@as(usize, 2), v3.@"0");
+    try testing.expectEqual(@as(u64, 7), v3.@"1");
+    try testing.expectError(error.TestErrorIterError, iter.next());
+}
+
+const TestErrorIter = struct {
+    const Self = @This();
+
+    counter: usize = 0,
+    until_err: usize,
+
+    pub fn init(until_err: usize) Self {
+        return .{ .until_err = until_err };
+    }
+
+    pub fn next(self: *Self) !?usize {
+        if (self.counter >= self.until_err) return error.TestErrorIterError;
+        self.counter += 1;
+        return self.counter - 1;
+    }
+};
