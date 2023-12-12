@@ -112,8 +112,18 @@ test {
 }
 
 pub fn count(iter: anytype) usize {
-    var result = 0;
-    while (iter.next()) |_| {
+    const Iter = @TypeOf(iter);
+    if (@hasDecl(Iter, "len")) {
+        switch (@typeInfo(@TypeOf(Iter.len))) {
+            .Fn => |Fn| if (Fn.params.len == 1 and (Fn.params[0].type == Iter or Fn.params[0].type == *Iter or Fn.params[0].type == *const Iter) and Fn.return_type == usize) {
+                return iter.len();
+            },
+            else => {},
+        }
+    }
+    var result: usize = 0;
+    var mut_iter = iter;
+    while (mut_iter.next()) |_| {
         result += 1;
     }
     return result;
@@ -245,4 +255,14 @@ test "tokenize" {
     const lengths = try toSlice(&iter, &buffer);
 
     try testing.expectEqualSlices(usize, &.{ 2, 5, 5 }, lengths);
+}
+
+test "count" {
+    const iter = std.mem.tokenize(u8, "hi there world", " ");
+    try testing.expectEqual(@as(usize, 3), count(iter));
+}
+
+test "count optimal" {
+    const iter = sliceIter(u8, "hi there world");
+    try testing.expectEqual(@as(usize, 14), count(iter));
 }

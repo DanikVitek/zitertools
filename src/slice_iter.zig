@@ -20,10 +20,10 @@ pub fn SliceIter(comptime T: type) type {
         }
 
         pub fn nth(self: *Self, n: usize) ?T {
-            if (self.index +| n >= self.slice.len)
+            if (self.index + n >= self.slice.len)
                 return null;
-            self.index +|= n;
-            return self.slice[self.index - n];
+            self.index += n;
+            return self.slice[self.index + 1 - n];
         }
 
         pub fn len(self: *const Self) usize {
