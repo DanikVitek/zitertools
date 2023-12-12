@@ -30,47 +30,36 @@ pub fn IterMethods(comptime Iter: type) type {
             return .{ .iter = it.map(self.iter, func) };
         }
 
-        pub fn mapContext(
-            self: Self,
-            context: anytype,
-            comptime func: anytype,
-        ) IterMethods(it.MapContextIter(
+        pub fn mapContext(self: Self, context: anytype, comptime func: anytype) IterMethods(it.MapContextIter(
             Iter,
             it.validateMapContextFn(Item(Iter), @TypeOf(context), func),
         )) {
             return .{ .iter = it.mapContext(self.iter, context, func) };
         }
 
-        pub fn filter(
-            self: Self,
-            comptime predicate: fn (*const Item(Iter)) bool,
-        ) IterMethods(it.FilterIter(Iter, predicate)) {
+        pub fn filter(self: Self, comptime predicate: anytype) IterMethods(it.FilterIter(
+            Iter,
+            it.validatePredicateFn(Iter, predicate),
+        )) {
             return .{ .iter = it.filter(self.iter, predicate) };
         }
 
-        pub fn filterContext(
-            self: Self,
-            context: anytype,
-            comptime predicate: fn (@TypeOf(context), *const Item(Iter)) bool,
-        ) IterMethods(it.FilterContextIter(Iter, @TypeOf(context), predicate)) {
+        pub fn filterContext(self: Self, context: anytype, comptime predicate: anytype) IterMethods(it.FilterContextIter(
+            Iter,
+            @TypeOf(context),
+            it.validatePredicateContextFn(Iter, @TypeOf(context), predicate),
+        )) {
             return .{ .iter = it.filterContext(self.iter, context, predicate) };
         }
 
-        pub fn filterMap(
-            self: Self,
-            comptime func: anytype,
-        ) IterMethods(it.FilterMapIter(
+        pub fn filterMap(self: Self, comptime func: anytype) IterMethods(it.FilterMapIter(
             Iter,
             it.validateFilterMapFn(Item(Iter), func),
         )) {
             return .{ .iter = it.filterMap(self.iter, func) };
         }
 
-        pub fn filterMapContext(
-            self: Self,
-            context: anytype,
-            comptime func: anytype,
-        ) IterMethods(it.FilterMapContextIter(
+        pub fn filterMapContext(self: Self, context: anytype, comptime func: anytype) IterMethods(it.FilterMapContextIter(
             Iter,
             @TypeOf(context),
             it.validateFilterMapContextFn(Item(Iter), @TypeOf(context), func),
@@ -78,18 +67,38 @@ pub fn IterMethods(comptime Iter: type) type {
             return .{ .iter = it.filterMapContext(self.iter, context, func) };
         }
 
-        pub fn find(
-            self: *Self,
-            comptime predicate: fn (*const Item(Iter)) bool,
-        ) it.Find(Iter, predicate) {
+        pub inline fn find(self: *Self, comptime predicate: anytype) it.Find(
+            Iter,
+            switch (@typeInfo(@TypeOf(predicate))) {
+                .Fn => |Fn| switch (@typeInfo(Fn.return_type orelse @compileError("Predicate must return a `bool` or `!bool`"))) {
+                    .Bool => bool,
+                    .ErrorUnion => |EU| switch (@typeInfo(EU.payload)) {
+                        .Bool => bool,
+                        else => @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(EU.payload) ++ "'"),
+                    },
+                    else => |T| @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(T) ++ "'"),
+                },
+                else => |T| @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(T) ++ "'"),
+            },
+        ) {
             return it.find(&self.iter, predicate);
         }
 
-        pub fn findContext(
-            self: *Self,
-            context: anytype,
-            comptime predicate: fn (@TypeOf(context), *const Item(Iter)) bool,
-        ) it.Find(Iter, @TypeOf(context), predicate) {
+        pub inline fn findContext(self: *Self, context: anytype, comptime predicate: anytype) it.Find(
+            Iter,
+            @TypeOf(context),
+            switch (@typeInfo(@TypeOf(predicate))) {
+                .Fn => |Fn| switch (@typeInfo(Fn.return_type orelse @compileError("Predicate must return a `bool` or `!bool`"))) {
+                    .Bool => bool,
+                    .ErrorUnion => |EU| switch (@typeInfo(EU.payload)) {
+                        .Bool => bool,
+                        else => @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(EU.payload) ++ "'"),
+                    },
+                    else => |T| @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(T) ++ "'"),
+                },
+                else => |T| @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(T) ++ "'"),
+            },
+        ) {
             return it.findContext(&self.iter, context, predicate);
         }
 

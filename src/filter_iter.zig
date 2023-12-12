@@ -9,7 +9,8 @@ const sliceIter = itertools.sliceIter;
 /// Iter type for filtering another iterator with a predicate
 ///
 /// See `filter` for more info.
-pub fn FilterIter(comptime BaseIter: type, comptime predicate: fn (*const Item(BaseIter)) bool) type {
+pub fn FilterIter(comptime BaseIter: type, comptime predicate: anytype) type {
+    const validatedPredicate = validatePredicateFn(BaseIter, predicate);
     return struct {
         const Self = @This();
 
@@ -19,23 +20,29 @@ pub fn FilterIter(comptime BaseIter: type, comptime predicate: fn (*const Item(B
 
         pub fn next(self: *Self) Next {
             const has_error = comptime IterError(BaseIter) != null;
+            const predicate_has_error = comptime @typeInfo(@TypeOf(validatedPredicate)) == .ErrorUnion;
+
             const maybe_item = if (has_error)
                 try self.base_iter.next()
             else
                 self.base_iter.next();
             const item = maybe_item orelse return null;
-            if (predicate(&item))
-                return item;
-            return @call(.always_tail, Self.next, .{self});
+
+            const predicate_result = if (predicate_has_error)
+                try validatedPredicate(&item)
+            else
+                validatedPredicate(&item);
+
+            return if (predicate_result)
+                item
+            else
+                @call(.always_tail, Self.next, .{self});
         }
     };
 }
 
-pub fn FilterContextIter(
-    comptime BaseIter: type,
-    comptime Context: type,
-    comptime predicate: fn (Context, *const Item(BaseIter)) bool,
-) type {
+pub fn FilterContextIter(comptime BaseIter: type, comptime Context: type, comptime predicate: anytype) type {
+    const validatedPredicate = validatePredicateContextFn(BaseIter, Context, predicate);
     return struct {
         const Self = @This();
 
@@ -45,15 +52,24 @@ pub fn FilterContextIter(
         pub const Next = if (IterError(BaseIter)) |ES| ES!?Item(BaseIter) else ?Item(BaseIter);
 
         pub fn next(self: *Self) Next {
-            const has_error = comptime IterError(BaseIter) != null;
-            const maybe_item = if (has_error)
+            const iter_has_error = comptime IterError(BaseIter) != null;
+            const predicate_has_error = comptime @typeInfo(@TypeOf(validatedPredicate)) == .ErrorUnion;
+
+            const maybe_item = if (iter_has_error)
                 try self.base_iter.next()
             else
                 self.base_iter.next();
             const item = maybe_item orelse return null;
-            if (predicate(self.context, &item))
-                return item;
-            return @call(.always_tail, Self.next, .{self});
+
+            const predicate_result = if (predicate_has_error)
+                try validatedPredicate(self.context, &item)
+            else
+                validatedPredicate(self.context, &item);
+
+            return if (predicate_result)
+                item
+            else
+                @call(.always_tail, Self.next, .{self});
         }
     };
 }
@@ -64,17 +80,56 @@ pub fn FilterContextIter(
 /// an optional.
 pub fn filter(
     iter: anytype,
-    comptime predicate: fn (*const Item(@TypeOf(iter))) bool,
-) FilterIter(@TypeOf(iter), predicate) {
+    comptime predicate: anytype,
+) FilterIter(@TypeOf(iter), validatePredicateFn(@TypeOf(iter), predicate)) {
     return .{ .base_iter = iter };
+}
+
+pub fn validatePredicateFn(
+    comptime BaseIter: type,
+    comptime predicate: anytype,
+) fn (*const Item(BaseIter)) switch (@typeInfo(@TypeOf(predicate))) {
+    .Fn => |Fn| switch (@typeInfo(Fn.return_type orelse @compileError("Predicate must return a `bool` or `!bool`"))) {
+        .Bool => bool,
+        .ErrorUnion => |EU| switch (@typeInfo(EU.payload)) {
+            .Bool => bool,
+            else => @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(EU.payload) ++ "'"),
+        },
+        else => |T| @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(T) ++ "'"),
+    },
+    else => |T| @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(T) ++ "'"),
+} {
+    return predicate;
 }
 
 pub fn filterContext(
     iter: anytype,
     context: anytype,
-    comptime predicate: fn (@TypeOf(context), *const Item(@TypeOf(iter))) bool,
-) FilterContextIter(@TypeOf(iter), @TypeOf(context), predicate) {
+    comptime predicate: anytype,
+) FilterContextIter(
+    @TypeOf(iter),
+    @TypeOf(context),
+    validatePredicateContextFn(@TypeOf(iter), @TypeOf(context), predicate),
+) {
     return .{ .base_iter = iter, .context = context };
+}
+
+pub fn validatePredicateContextFn(
+    comptime BaseIter: type,
+    comptime Context: type,
+    comptime predicate: anytype,
+) fn (Context, *const Item(BaseIter)) switch (@typeInfo(@TypeOf(predicate))) {
+    .Fn => |Fn| switch (@typeInfo(Fn.return_type orelse @compileError("Predicate must return a `bool` or `!bool`"))) {
+        .Bool => bool,
+        .ErrorUnion => |EU| switch (@typeInfo(EU.payload)) {
+            .Bool => bool,
+            else => @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(EU.payload) ++ "'"),
+        },
+        else => |T| @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(T) ++ "'"),
+    },
+    else => |T| @compileError("Only `bool` or `!bool` allowed as predicate return type, found '" ++ @typeName(T) ++ "'"),
+} {
+    return predicate;
 }
 
 test "FilterIter" {

@@ -49,7 +49,7 @@ pub fn skip(iter: anytype, to_skip: usize) SkipIter(@TypeOf(iter)) {
 }
 
 test "skip" {
-    var base_iter = range(u32, 5, 10);
+    var base_iter = range(@as(u32, 5), 10);
     var iter = skip(base_iter, 2);
     try testing.expectEqual(Item(@TypeOf(base_iter)), Item(@TypeOf(iter)));
     try testing.expectEqual(@as(?u32, 7), iter.next());

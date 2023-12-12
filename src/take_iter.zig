@@ -43,7 +43,7 @@ pub fn take(iter: anytype, to_take: usize) TakeIter(@TypeOf(iter)) {
 }
 
 test "take" {
-    var base_iter = range(u32, 0, 10);
+    var base_iter = range(@as(u32, 0), 10);
     var iter = take(base_iter, 5);
     try testing.expectEqual(Item(@TypeOf(base_iter)), Item(@TypeOf(iter)));
     try testing.expectEqual(@as(?u32, 0), iter.next());
@@ -55,7 +55,7 @@ test "take" {
 }
 
 test "take small iter" {
-    var base_iter = range(u32, 0, 2);
+    var base_iter = range(@as(u32, 0), 2);
     var iter = take(base_iter, 5);
     try testing.expectEqual(Item(@TypeOf(base_iter)), Item(@TypeOf(iter)));
     try testing.expectEqual(@as(?u32, 0), iter.next());

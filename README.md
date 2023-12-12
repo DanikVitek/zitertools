@@ -66,7 +66,7 @@ const std = @import("std");
 const zitertools = @import("zitertools");
 
 pub fn main() void {
-    var iter = zitertools.range(u32, 0, 5);
+    var iter = zitertools.range(@as(u32, 0), 5);
     std.debug.print("{s}\n", .{ @typeName(zitertools.Item(@TypeOf(iter))) }); // Output: u32
     std.debug.print("{?}\n", .{ iter.next()) }; // Output: 0
     std.debug.print("{?}\n", .{ iter.next()) }; // Output: 1

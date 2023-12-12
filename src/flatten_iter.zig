@@ -65,11 +65,11 @@ pub fn flatten(iter: anytype) FlattenIter(@TypeOf(iter)) {
 test "Flatten" {
     const func = struct {
         fn func(x: u32) RangeIter(u32) {
-            return itertools.range(u32, 0, x);
+            return itertools.range(@as(u32, 0), x);
         }
     }.func;
 
-    var iters = itertools.map(itertools.range(u32, 0, 5), func);
+    var iters = itertools.map(itertools.range(@as(u32, 0), 5), func);
     var iter = flatten(iters);
 
     try testing.expectEqual(u32, Item(@TypeOf(iter)));

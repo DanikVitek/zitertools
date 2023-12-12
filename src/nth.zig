@@ -22,12 +22,12 @@ pub fn nth(iter: anytype, n: usize) Nth(@TypeOf(iter)) {
 const testing = @import("std").testing;
 
 test "nth" {
-    var iter = itertools.range(u8, 0, 10);
+    var iter = itertools.range(@as(u8, 0), 10);
     try testing.expectEqual(@as(?u8, 5), nth(&iter, 5));
 }
 
 test "nth far" {
-    var iter = itertools.range(u8, 0, 10);
+    var iter = itertools.range(@as(u8, 0), 10);
     try testing.expectEqual(@as(?u8, null), nth(&iter, 15));
 }
 

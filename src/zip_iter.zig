@@ -123,7 +123,7 @@ pub fn zip(iters: anytype) ZipIter(@TypeOf(iters)) {
 
 test "zip tuple" {
     var iter1 = sliceIter(u32, &.{ 1, 2, 3 });
-    var iter2 = range(u64, 5, 8);
+    var iter2 = range(@as(u64, 5), 8);
     var iter = zip(.{ iter1, iter2 });
     try testing.expectEqual(@TypeOf(iter).Item, Item(@TypeOf(iter)));
     const v1 = iter.next().?;
@@ -140,7 +140,7 @@ test "zip tuple" {
 
 test "zip struct" {
     var iter1 = sliceIter(u32, &.{ 1, 2, 3 });
-    var iter2 = range(u64, 5, 8);
+    var iter2 = range(@as(u64, 5), 8);
     var iter = zip(.{ .first = iter1, .second = iter2 });
     try testing.expectEqual(@TypeOf(iter).Item, Item(@TypeOf(iter)));
     const v1 = iter.next().?;
@@ -157,7 +157,7 @@ test "zip struct" {
 
 test "zip error first" {
     var iter1 = TestErrorIter.init(3);
-    var iter2 = range(u64, 5, 8);
+    var iter2 = range(@as(u64, 5), 8);
     var iter = zip(.{ iter1, iter2 });
     try testing.expectEqual(@TypeOf(iter).Item, Item(@TypeOf(iter)));
     const v1 = (try iter.next()).?;

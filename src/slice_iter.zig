@@ -18,6 +18,17 @@ pub fn SliceIter(comptime T: type) type {
             self.index += 1;
             return self.slice[self.index - 1];
         }
+
+        pub fn nth(self: *Self, n: usize) ?T {
+            if (self.index +| n >= self.slice.len)
+                return null;
+            self.index +|= n;
+            return self.slice[self.index - n];
+        }
+
+        pub fn len(self: *const Self) usize {
+            return if (self.index <= self.slice.len) self.slice.len - self.index else 0;
+        }
     };
 }
 

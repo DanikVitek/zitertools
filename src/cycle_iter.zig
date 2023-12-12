@@ -50,7 +50,7 @@ pub fn cycle(iter: anytype) CycleIter(@TypeOf(iter)) {
 }
 
 test "Cycle" {
-    var base_iter = range(u32, 0, 3);
+    var base_iter = range(@as(u32, 0), 3);
     var iter = cycle(base_iter);
     try std.testing.expectEqual(u32, Item(@TypeOf(iter)));
     try testing.expectEqual(@as(?u32, 0), iter.next());

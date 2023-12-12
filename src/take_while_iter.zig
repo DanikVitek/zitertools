@@ -100,7 +100,7 @@ pub fn takeWhileContext(
 }
 
 test "takeWhile" {
-    var base_iter = range(u32, 0, 10);
+    var base_iter = range(@as(u32, 0), 10);
     const predicate = struct {
         fn predicate(x: u32) bool {
             return x < 5;
@@ -117,7 +117,7 @@ test "takeWhile" {
 }
 
 test "takeWhileContext" {
-    var base_iter = range(u32, 0, 10);
+    var base_iter = range(@as(u32, 0), 10);
     const predicate = struct {
         fn predicate(context: u32, x: u32) bool {
             return x < context;
