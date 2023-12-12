@@ -123,9 +123,9 @@ pub fn validateFilterMapFn(
     .Optional => |Optional| ?Optional.child,
     .ErrorUnion => |EU| switch (@typeInfo(EU.payload)) {
         .Optional => |Optional| EU.error_set!?Optional.child,
-        else => @compileError("filterMap: function return type must be `?T` or `!?T`, found: " ++ @typeName(EU.payload)),
+        else => @compileError("[filterMap] function return type must be `?T` or `!?T`, found: " ++ @typeName(EU.payload)),
     },
-    else => @compileError("filterMap: function return type must be `?T` or `!?T`, found: " ++ @typeName(@typeInfo(@TypeOf(func)).Fn.return_type.?)),
+    else => @compileError("[filterMap] function return type must be `?T` or `!?T`, found: " ++ @typeName(@typeInfo(@TypeOf(func)).Fn.return_type.?)),
 } {
     return func;
 }
@@ -154,7 +154,14 @@ pub fn validateFilterMapContextFn(
     comptime Source: type,
     comptime Context: type,
     comptime func: anytype,
-) fn (Context, Source) ?@typeInfo(@typeInfo(@TypeOf(func)).Fn.return_type.?).Optional.child {
+) fn (Context, Source) switch (@typeInfo(@typeInfo(@TypeOf(func)).Fn.return_type.?)) {
+    .Optional => |Optional| ?Optional.child,
+    .ErrorUnion => |EU| switch (@typeInfo(EU.payload)) {
+        .Optional => |Optional| EU.error_set!?Optional.child,
+        else => @compileError("[filterMapContext] function return type must be `?T` or `!?T`, found: " ++ @typeName(EU.payload)),
+    },
+    else => @compileError("[filterMapContext] function return type must be `?T` or `!?T`, found: " ++ @typeName(@typeInfo(@TypeOf(func)).Fn.return_type.?)),
+} {
     return func;
 }
 
