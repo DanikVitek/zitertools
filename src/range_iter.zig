@@ -37,7 +37,7 @@ pub fn RangeIter(comptime T: type) type {
     };
 }
 
-/// Creates a `RangeIter`. See its documentation for more info.
+/// Creates a `RangeIter`, a (half-open) range iterator bounded inclusively below and exclusively above [start, end).
 pub fn range(start: anytype, end: @TypeOf(start)) RangeIter(@TypeOf(start)) {
     const T = @TypeOf(start);
     return .{

@@ -111,15 +111,9 @@ test {
     testing.refAllDeclsRecursive(@This());
 }
 
-pub fn count(iter: anytype) usize {
-    const Iter = @TypeOf(iter);
-    if (@hasDecl(Iter, "len")) {
-        switch (@typeInfo(@TypeOf(Iter.len))) {
-            .Fn => |Fn| if (Fn.params.len == 1 and (Fn.params[0].type == Iter or Fn.params[0].type == *Iter or Fn.params[0].type == *const Iter) and Fn.return_type == usize) {
-                return iter.len();
-            },
-            else => {},
-        }
+pub fn count(iter: anytype) callconv(if (iterHasLen(@TypeOf(iter))) .Inline else .Unspecified) usize {
+    if (comptime iterHasLen(@TypeOf(iter))) {
+        return iter.len();
     }
     var result: usize = 0;
     var mut_iter = iter;
@@ -127,6 +121,18 @@ pub fn count(iter: anytype) usize {
         result += 1;
     }
     return result;
+}
+
+fn iterHasLen(comptime Iter: type) bool {
+    if (@hasDecl(Iter, "len")) {
+        switch (@typeInfo(@TypeOf(Iter.len))) {
+            .Fn => |Fn| if (Fn.params.len == 1 and (Fn.params[0].type == Iter or Fn.params[0].type == *Iter or Fn.params[0].type == *const Iter) and Fn.return_type == usize) {
+                return true;
+            },
+            else => {},
+        }
+    }
+    return false;
 }
 
 /// Returns the type of item the iterator holds
