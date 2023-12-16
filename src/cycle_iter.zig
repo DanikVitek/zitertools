@@ -28,13 +28,9 @@ pub fn CycleIter(comptime BaseIter: type) type {
 
             if (maybe_item) |item| {
                 return item;
-            } else {
-                self.base_iter = self.orig_iter;
-                return if (has_error)
-                    try self.base_iter.next()
-                else
-                    self.base_iter.next();
             }
+            self.base_iter = self.orig_iter;
+            return @call(.always_tail, Self.next, .{self});
         }
     };
 }
