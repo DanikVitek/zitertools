@@ -54,7 +54,7 @@ pub fn enumerate(iter: anytype) EnumerateIter(@TypeOf(iter)) {
 }
 
 test "enumerate" {
-    var base_iter = range(@as(u32, 5), 10).stepBy(2);
+    const base_iter = range(@as(u32, 5), 10).stepBy(2);
     var iter = enumerate(base_iter);
     try testing.expectEqual(@TypeOf(iter).Item, Item(@TypeOf(iter)));
     const v1 = iter.next().?;

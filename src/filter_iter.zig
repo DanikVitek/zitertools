@@ -134,7 +134,7 @@ pub fn validatePredicateContextFn(
 
 test "FilterIter" {
     const slice: []const u32 = &.{ 1, 2, 3, 4, 5, 6, 7, 8 };
-    var slice_iter = sliceIter(u32, slice);
+    const slice_iter = sliceIter(u32, slice);
 
     const predicates = struct {
         pub fn even(x: *const u32) bool {
@@ -157,7 +157,7 @@ test "FilterIter" {
 
 test "FilterContextIter simple" {
     const slice: []const u32 = &.{ 1, 2, 3, 4, 5, 6, 7, 8 };
-    var slice_iter = sliceIter(u32, slice);
+    const slice_iter = sliceIter(u32, slice);
 
     const predicates = struct {
         pub fn dividible(divisor: u32, x: *const u32) bool {
@@ -176,7 +176,7 @@ test "FilterContextIter simple" {
 
 test "FilterContextIter closure" {
     const slice: []const u32 = &.{ 1, 2, 3, 4, 5, 6, 7, 8 };
-    var slice_iter = sliceIter(u32, slice);
+    const slice_iter = sliceIter(u32, slice);
 
     const Closure = struct {
         divisor: u32,
@@ -194,7 +194,7 @@ test "FilterContextIter closure" {
 }
 
 test "FilterIter error" {
-    var test_iter = TestErrorIter.init(5);
+    const test_iter = TestErrorIter.init(5);
 
     const even = struct {
         pub fn even(x: *const usize) bool {

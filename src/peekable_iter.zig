@@ -55,7 +55,7 @@ pub fn peekable(iter: anytype) PeekableIter(@TypeOf(iter)) {
 }
 
 test "Peekable" {
-    var range = itertools.range(@as(u32, 0), 5);
+    const range = itertools.range(@as(u32, 0), 5);
     var iter = peekable(range);
     try std.testing.expectEqual(u32, Item(@TypeOf(iter)));
     try testing.expectEqual(@as(?u32, 0), iter.next());

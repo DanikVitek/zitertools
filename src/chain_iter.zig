@@ -63,8 +63,8 @@ pub fn chain(iter1: anytype, iter2: anytype) ChainIter(@TypeOf(iter1), @TypeOf(i
 }
 
 test "Chain" {
-    var iter1 = sliceIter(u32, &.{ 1, 2, 3 });
-    var iter2 = range(@as(u32, 5), 8);
+    const iter1 = sliceIter(u32, &.{ 1, 2, 3 });
+    const iter2 = range(@as(u32, 5), 8);
     var iter = chain(iter1, iter2);
     try testing.expectEqual(u32, Item(@TypeOf(iter)));
     try testing.expectEqual(@as(?u32, 1), iter.next());
@@ -77,8 +77,8 @@ test "Chain" {
 }
 
 test "Chain error in iter1" {
-    var iter1 = TestErrorIter.init(3);
-    var iter2 = range(@as(usize, 5), 8);
+    const iter1 = TestErrorIter.init(3);
+    const iter2 = range(@as(usize, 5), 8);
     var iter = chain(iter1, iter2);
     try testing.expectEqual(usize, Item(@TypeOf(iter)));
     try testing.expectEqual(@as(?usize, 0), try iter.next());
@@ -88,8 +88,8 @@ test "Chain error in iter1" {
 }
 
 test "Chain error in iter2" {
-    var iter1 = range(@as(usize, 5), 8);
-    var iter2 = TestErrorIter.init(3);
+    const iter1 = range(@as(usize, 5), 8);
+    const iter2 = TestErrorIter.init(3);
     var iter = chain(iter1, iter2);
     try testing.expectEqual(usize, Item(@TypeOf(iter)));
     try testing.expectEqual(@as(?usize, 5), try iter.next());

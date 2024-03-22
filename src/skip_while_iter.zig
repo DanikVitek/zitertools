@@ -107,7 +107,7 @@ pub fn skipWhileContext(
 }
 
 test "skipWhile" {
-    var base_iter = range(@as(u32, 0), 10);
+    const base_iter = range(@as(u32, 0), 10);
     const predicate = struct {
         fn predicate(x: *const u32) bool {
             return x.* < 5;
@@ -124,7 +124,7 @@ test "skipWhile" {
 }
 
 test "skipWhile error" {
-    var base_iter = TestErrorIter{ .until_err = 3 };
+    const base_iter = TestErrorIter{ .until_err = 3 };
     const predicate = struct {
         fn predicate(x: *const usize) bool {
             return x.* < 5;

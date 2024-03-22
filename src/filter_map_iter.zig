@@ -167,7 +167,7 @@ pub fn validateFilterMapContextFn(
 
 test "FilterMapIter" {
     const slice: []const u32 = &.{ 1, 2, 3, 4, 5, 6, 7, 8 };
-    var slice_iter = sliceIter(u32, slice);
+    const slice_iter = sliceIter(u32, slice);
 
     const func = struct {
         pub fn func(x: u32) ?u64 {
@@ -191,7 +191,7 @@ test "FilterMapIter" {
 
 test "FilterMapContextIter simple" {
     const slice: []const u32 = &.{ 1, 2, 3, 4, 5, 6, 7, 8 };
-    var slice_iter = sliceIter(u32, slice);
+    const slice_iter = sliceIter(u32, slice);
 
     const func = struct {
         pub fn func(context: u32, x: u32) ?u64 {
@@ -215,7 +215,7 @@ test "FilterMapContextIter simple" {
 
 test "FilterMapContextIter closure" {
     const slice: []const u32 = &.{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    var slice_iter = sliceIter(u32, slice);
+    const slice_iter = sliceIter(u32, slice);
 
     const Closure = struct {
         divider: u32,
@@ -238,7 +238,7 @@ test "FilterMapContextIter closure" {
 }
 
 test "FilterMapIter error" {
-    var test_iter = TestErrorIter.init(3);
+    const test_iter = TestErrorIter.init(3);
 
     const func = struct {
         pub fn func(x: usize) ?u64 {
@@ -258,7 +258,7 @@ test "FilterMapIter error" {
 }
 
 test "FilterMapIter error union" {
-    var test_iter = TestErrorIter.init(3);
+    const test_iter = TestErrorIter.init(3);
 
     const doubleEven = struct {
         pub fn doubleEven(x: usize) error{Overflow}!?u64 {

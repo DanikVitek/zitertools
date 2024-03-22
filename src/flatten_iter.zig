@@ -69,7 +69,7 @@ test "Flatten" {
         }
     }.func;
 
-    var iters = itertools.map(itertools.range(@as(u32, 0), 5), func);
+    const iters = itertools.map(itertools.range(@as(u32, 0), 5), func);
     var iter = flatten(iters);
 
     try testing.expectEqual(u32, Item(@TypeOf(iter)));

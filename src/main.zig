@@ -180,7 +180,7 @@ pub fn Item(comptime Iter: type) type {
 }
 
 test "Item" {
-    var iter = std.mem.tokenize(u8, "hi there world", " ");
+    const iter = std.mem.tokenize(u8, "hi there world", " ");
     try testing.expectEqual([]const u8, Item(@TypeOf(iter)));
 }
 
@@ -235,7 +235,7 @@ pub fn IterError(comptime Iter: type) ?type {
 }
 
 test "IterError" {
-    var iter = std.mem.tokenize(u8, "hi there world", " ");
+    const iter = std.mem.tokenize(u8, "hi there world", " ");
     try testing.expectEqual(@as(?type, null), IterError(@TypeOf(iter)));
 
     const dir = testing.tmpIterableDir(.{}).iterable_dir;
@@ -251,7 +251,7 @@ test "IterError" {
 
 test "tokenize" {
     const string = "hi there world";
-    var tokens = std.mem.tokenizeAny(u8, string, " ");
+    const tokens = std.mem.tokenizeAny(u8, string, " ");
 
     const length = struct {
         fn length(x: []const u8) usize {

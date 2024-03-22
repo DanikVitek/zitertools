@@ -122,16 +122,20 @@ pub fn zip(iters: anytype) ZipIter(@TypeOf(iters)) {
 }
 
 test "zip tuple" {
-    var iter1 = sliceIter(u32, &.{ 1, 2, 3 });
-    var iter2 = range(@as(u64, 5), 8);
+    const iter1 = sliceIter(u32, &.{ 1, 2, 3 });
+    const iter2 = range(@as(u64, 5), 8);
     var iter = zip(.{ iter1, iter2 });
+
     try testing.expectEqual(@TypeOf(iter).Item, Item(@TypeOf(iter)));
+
     const v1 = iter.next().?;
-    try testing.expectEqual(@as(u32, 1), v1.@"0");
-    try testing.expectEqual(@as(u64, 5), v1.@"1");
+    try testing.expectEqual(@as(u32, 1), v1[0]);
+    try testing.expectEqual(@as(u64, 5), v1[1]);
+
     const v2 = iter.next().?;
     try testing.expectEqual(@as(u32, 2), v2.@"0");
     try testing.expectEqual(@as(u64, 6), v2.@"1");
+
     const v3 = iter.next().?;
     try testing.expectEqual(@as(u32, 3), v3.@"0");
     try testing.expectEqual(@as(u64, 7), v3.@"1");
@@ -139,16 +143,20 @@ test "zip tuple" {
 }
 
 test "zip struct" {
-    var iter1 = sliceIter(u32, &.{ 1, 2, 3 });
-    var iter2 = range(@as(u64, 5), 8);
+    const iter1 = sliceIter(u32, &.{ 1, 2, 3 });
+    const iter2 = range(@as(u64, 5), 8);
     var iter = zip(.{ .first = iter1, .second = iter2 });
+
     try testing.expectEqual(@TypeOf(iter).Item, Item(@TypeOf(iter)));
+
     const v1 = iter.next().?;
     try testing.expectEqual(@as(u32, 1), v1.first);
     try testing.expectEqual(@as(u64, 5), v1.second);
+
     const v2 = iter.next().?;
     try testing.expectEqual(@as(u32, 2), v2.first);
     try testing.expectEqual(@as(u64, 6), v2.second);
+
     const v3 = iter.next().?;
     try testing.expectEqual(@as(u32, 3), v3.first);
     try testing.expectEqual(@as(u64, 7), v3.second);
@@ -156,16 +164,20 @@ test "zip struct" {
 }
 
 test "zip error first" {
-    var iter1 = TestErrorIter.init(3);
-    var iter2 = range(@as(u64, 5), 8);
+    const iter1 = TestErrorIter.init(3);
+    const iter2 = range(@as(u64, 5), 8);
     var iter = zip(.{ iter1, iter2 });
+
     try testing.expectEqual(@TypeOf(iter).Item, Item(@TypeOf(iter)));
+
     const v1 = (try iter.next()).?;
     try testing.expectEqual(@as(usize, 0), v1.@"0");
     try testing.expectEqual(@as(u64, 5), v1.@"1");
+
     const v2 = (try iter.next()).?;
     try testing.expectEqual(@as(usize, 1), v2.@"0");
     try testing.expectEqual(@as(u64, 6), v2.@"1");
+
     const v3 = (try iter.next()).?;
     try testing.expectEqual(@as(usize, 2), v3.@"0");
     try testing.expectEqual(@as(u64, 7), v3.@"1");

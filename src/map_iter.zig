@@ -129,7 +129,7 @@ pub fn validateMapContextFn(
 
 test "MapIter" {
     const slice: []const u32 = &.{ 1, 2, 3, 4 };
-    var slice_iter = sliceIter(u32, slice);
+    const slice_iter = sliceIter(u32, slice);
 
     const functions = struct {
         pub fn double(x: u32) u64 {
@@ -154,7 +154,7 @@ test "MapIter" {
 
 test "MapIter value closure" {
     const slice: []const u32 = &.{ 1, 2, 3, 4 };
-    var slice_iter = sliceIter(u32, slice);
+    const slice_iter = sliceIter(u32, slice);
 
     const bias: u32 = 1;
     const Closure = struct {
@@ -177,7 +177,7 @@ test "MapIter value closure" {
 
 test "MapIter reference closure" {
     const slice: []const u32 = &.{ 1, 2, 3, 4 };
-    var slice_iter = sliceIter(u32, slice);
+    const slice_iter = sliceIter(u32, slice);
 
     var acc: u32 = 0;
     const Closure = struct {
@@ -204,7 +204,7 @@ test "MapIter reference closure" {
 }
 
 test "MapIter error union" {
-    var test_iter = TestErrorIter.init(3);
+    const test_iter = TestErrorIter.init(3);
 
     const double = struct {
         pub fn double(x: usize) error{Overflow}!u64 {

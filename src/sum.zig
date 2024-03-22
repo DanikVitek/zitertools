@@ -36,7 +36,11 @@ pub fn sum(comptime Dest: ?type, iter: anytype) Sum(@TypeOf(iter), Dest) {
         },
         else => @compileError("[sum] unsupported type: " ++ @typeName(U)),
     };
-    return (if (has_error) try fold(iter, init, add) else fold(iter, init, add));
+
+    return if (has_error)
+        try fold(iter, init, add)
+    else
+        fold(iter, init, add);
 }
 
 const testing = @import("std").testing;
