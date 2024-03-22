@@ -1,13 +1,21 @@
 const std = @import("std");
 const testing = std.testing;
 
-const itertools = @import("main.zig");
+const itertools = @import("root.zig");
 const Item = itertools.Item;
+
+fn isNumber(comptime T: type) bool {
+    return switch (@typeInfo(T)) {
+        .Int, .Float, .ComptimeInt, .ComptimeFloat => true,
+        else => false,
+    };
+}
 
 /// A (half-open) range iterator bounded inclusively below and exclusively above [start, end).
 pub fn RangeIter(comptime T: type) type {
-    if (!std.meta.trait.isNumber(T))
+    if (!isNumber(T)) {
         @compileError("RangeIter Item type must be a number");
+    }
 
     return struct {
         const Self = @This();

@@ -1,4 +1,4 @@
-const it = @import("main.zig");
+const it = @import("root.zig");
 const Item = it.Item;
 const IterError = it.IterError;
 

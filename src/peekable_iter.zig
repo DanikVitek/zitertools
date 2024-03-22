@@ -1,7 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 
-const itertools = @import("main.zig");
+const itertools = @import("root.zig");
 const Item = itertools.Item;
 const IterError = itertools.IterError;
 

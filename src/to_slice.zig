@@ -4,7 +4,7 @@ const Child = std.meta.Child;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
-const itertools = @import("main.zig");
+const itertools = @import("root.zig");
 const Item = itertools.Item;
 const IterError = itertools.IterError;
 const sliceIter = itertools.sliceIter;

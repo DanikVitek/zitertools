@@ -15,8 +15,8 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const module = b.addModule("zitertools", .{
-        .source_file = .{ .path = "src/root.zig" },
+    _ = b.addModule("zitertools", .{
+        .root_source_file = .{ .path = "src/root.zig" },
     });
 
     // Creates a step for unit testing. This only builds the test executable
@@ -26,11 +26,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
-    var dep_iter = module.dependencies.iterator();
-    while (dep_iter.next()) |dep| {
-        tests.addModule(dep.key_ptr.*, dep.value_ptr.*);
-    }
 
     const run_tests = b.addRunArtifact(tests);
 

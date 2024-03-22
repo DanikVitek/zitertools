@@ -1,5 +1,5 @@
 const std = @import("std");
-const itertools = @import("main.zig");
+const itertools = @import("root.zig");
 const Item = itertools.Item;
 const IterError = itertools.IterError;
 const fold = itertools.fold;

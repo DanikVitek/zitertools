@@ -6,7 +6,7 @@ const StructField = std.builtin.Type.StructField;
 const ErrorSet = std.builtin.Type.ErrorSet;
 const Error = std.builtin.Type.Error;
 
-const itertools = @import("main.zig");
+const itertools = @import("root.zig");
 const Item = itertools.Item;
 const SliceIter = itertools.SliceIter;
 const IterError = itertools.IterError;
@@ -63,7 +63,7 @@ pub fn ZipIterItem(comptime Iters: type) type {
     }
     return @Type(.{
         .Struct = Struct{
-            .layout = .Auto,
+            .layout = .auto,
             .fields = &blk: {
                 var fields: [total_fields]StructField = undefined;
                 var i = 0; // manual counter because of filtering out of comptime fields

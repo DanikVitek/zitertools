@@ -238,12 +238,12 @@ test "IterError" {
     const iter = std.mem.tokenize(u8, "hi there world", " ");
     try testing.expectEqual(@as(?type, null), IterError(@TypeOf(iter)));
 
-    const dir = testing.tmpIterableDir(.{}).iterable_dir;
+    const dir = testing.tmpDir(.{}).dir;
     var walker = try dir.walk(testing.allocator);
     defer walker.deinit();
     try testing.expectEqual(
         @as(?type, @typeInfo(
-            @typeInfo(@TypeOf(std.fs.IterableDir.Walker.next)).Fn.return_type.?,
+            @typeInfo(@TypeOf(std.fs.Dir.Walker.next)).Fn.return_type.?,
         ).ErrorUnion.error_set),
         IterError(@TypeOf(walker)),
     );
