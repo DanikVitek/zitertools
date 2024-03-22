@@ -16,27 +16,27 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const module = b.addModule("zitertools", .{
-        .source_file = .{ .path = "src/root.zig" },
+        .source_file = .{ .path = "src/main.zig" },
     });
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
-    const tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/root.zig" },
+    const main_tests = b.addTest(.{
+        .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
 
     var dep_iter = module.dependencies.iterator();
     while (dep_iter.next()) |dep| {
-        tests.addModule(dep.key_ptr.*, dep.value_ptr.*);
+        main_tests.addModule(dep.key_ptr.*, dep.value_ptr.*);
     }
 
-    const run_tests = b.addRunArtifact(tests);
+    const run_main_tests = b.addRunArtifact(main_tests);
 
     // This creates a build step. It will be visible in the `zig build --help` menu,
     // and can be selected like this: `zig build test`
     // This will evaluate the `test` step rather than the default, which is "install".
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&run_tests.step);
+    test_step.dependOn(&run_main_tests.step);
 }
